@@ -1,7 +1,6 @@
 package logrus
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"time"
@@ -34,9 +33,6 @@ type LogEntry struct {
 
 	// Message passed to Debug, Info, Warn, Error, Fatal or Panic
 	Message string
-
-	// When formatter is called in entry.log(), an Buffer may be set to entry
-	Buffer *bytes.Buffer
 }
 
 // NewLogEntry creates a new log entry
@@ -186,7 +182,6 @@ func constructMessage(mode formatMode, format string, args ...interface{}) strin
 // This function is not declared with a pointer value because otherwise
 // race conditions will occur when using multiple goroutines
 func (entry LogEntry) log(level Level, msg string) {
-	var buffer *bytes.Buffer
 	entry.Time = time.Now()
 	entry.Level = level
 	entry.Message = msg
@@ -199,12 +194,7 @@ func (entry LogEntry) log(level Level, msg string) {
 		fmt.Fprintf(os.Stderr, "Failed to fire hook: %v\n", err)
 		entry.Logger.mu.Unlock()
 	}
-	buffer = bufferPool.Get().(*bytes.Buffer)
-	buffer.Reset()
-	defer bufferPool.Put(buffer)
-	entry.Buffer = buffer
 	serialized, err := entry.Logger.Formatter.FormatEntry(&entry)
-	entry.Buffer = nil
 	if err != nil {
 		entry.Logger.mu.Lock()
 		fmt.Fprintf(os.Stderr, "Failed to obtain reader, %v\n", err)

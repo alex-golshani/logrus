@@ -69,7 +69,7 @@ func (f *TextFormatter) FormatEntry(entry *LogEntry) ([]byte, error) {
 			f.init(entry.Logger.Out)
 		}
 	})
-	return f.format(entry.Buffer, entry.Data, entry.Level, entry.Message, entry.Time)
+	return f.format(entry.Data, entry.Level, entry.Message, entry.Time)
 }
 
 // Format renders a single log entry
@@ -79,11 +79,11 @@ func (f *TextFormatter) Format(entry *Entry) ([]byte, error) {
 			f.init(entry.Logger.Out)
 		}
 	})
-	return f.format(entry.Buffer, entry.Data, entry.Level, entry.Message, entry.Time)
+	return f.format(entry.Data, entry.Level, entry.Message, entry.Time)
 }
 
-func (f *TextFormatter) format(buffer *bytes.Buffer, fields Fields, level Level, message string, t time.Time) ([]byte, error) {
-	var b *bytes.Buffer
+func (f *TextFormatter) format(fields Fields, level Level, message string, t time.Time) ([]byte, error) {
+	b := &bytes.Buffer{}
 	keys := make([]string, 0, len(fields))
 	for k := range fields {
 		keys = append(keys, k)
@@ -91,11 +91,6 @@ func (f *TextFormatter) format(buffer *bytes.Buffer, fields Fields, level Level,
 
 	if !f.DisableSorting {
 		sort.Strings(keys)
-	}
-	if buffer != nil {
-		b = buffer
-	} else {
-		b = &bytes.Buffer{}
 	}
 
 	prefixFieldClashes(fields)
