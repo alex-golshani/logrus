@@ -25,19 +25,19 @@ func (entry *Entry) WriterLevel(level Level) *io.PipeWriter {
 
 	switch level {
 	case DebugLevel:
-		printFunc = entry.Debug
+		printFunc = entry.AsDebug().Write
 	case InfoLevel:
-		printFunc = entry.Info
+		printFunc = entry.AsInfo().Write
 	case WarnLevel:
-		printFunc = entry.Warn
+		printFunc = entry.AsWarning().Write
 	case ErrorLevel:
-		printFunc = entry.Error
+		printFunc = entry.AsError().Write
 	case FatalLevel:
-		printFunc = entry.Fatal
+		printFunc = entry.AsFatal().Write
 	case PanicLevel:
-		printFunc = entry.Panic
+		printFunc = entry.AsPanic().Write
 	default:
-		printFunc = entry.Print
+		printFunc = entry.AsInfo().Write
 	}
 
 	go entry.writerScanner(reader, printFunc)
@@ -52,7 +52,7 @@ func (entry *Entry) writerScanner(reader *io.PipeReader, printFunc func(args ...
 		printFunc(scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
-		entry.Errorf("Error while reading from Writer: %s", err)
+		entry.AsError().Write("Error while reading from Writer: %s", err)
 	}
 	reader.Close()
 }

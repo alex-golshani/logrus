@@ -19,7 +19,7 @@ func TestLocalhostAddAndPrint(t *testing.T) {
 
 	for _, level := range hook.Levels() {
 		if len(log.Hooks[level]) != 1 {
-			t.Errorf("SyslogHook was not added. The length of log.Hooks[%v]: %v", level, len(log.Hooks[level]))
+			t.Errorf("SyslogHook was not added. The length of log.hooks[%v]: %v", level, len(log.Hooks[level]))
 		}
 	}
 

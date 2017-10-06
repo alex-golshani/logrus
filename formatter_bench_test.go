@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// smallFields is a small size data set for benchmarking
+// smallFields is a small size Data set for benchmarking
 var smallFields = Fields{
 	"foo":   "bar",
 	"baz":   "qux",
@@ -14,7 +14,7 @@ var smallFields = Fields{
 	"three": "four",
 }
 
-// largeFields is a large size data set for benchmarking
+// largeFields is a large size Data set for benchmarking
 var largeFields = Fields{
 	"foo":       "bar",
 	"baz":       "qux",
@@ -80,12 +80,12 @@ func BenchmarkLargeJSONFormatter(b *testing.B) {
 }
 
 func doBenchmark(b *testing.B, formatter Formatter, fields Fields) {
-	logger := New()
+	logger := New(InfoLevel)
 
 	entry := &Entry{
 		Time:    time.Time{},
 		Level:   InfoLevel,
-		Message: "message",
+		Message: "Message",
 		Data:    fields,
 		Logger:  logger,
 	}

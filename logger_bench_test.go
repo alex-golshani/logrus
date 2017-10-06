@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// smallFields is a small size data set for benchmarking
+// smallFields is a small size Data set for benchmarking
 var loggerFields = Fields{
 	"foo":   "bar",
 	"baz":   "qux",
@@ -33,29 +33,29 @@ func BenchmarkDummyLoggerNoLock(b *testing.B) {
 
 func doLoggerBenchmark(b *testing.B, out *os.File, formatter Formatter, fields Fields) {
 	logger := Logger{
-		Out:       out,
-		Level:     InfoLevel,
-		Formatter: formatter,
+		out:       out,
+		level:     InfoLevel,
+		formatter: formatter,
 	}
 	entry := logger.WithFields(fields)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			entry.Info("aaa")
+			entry.Write("aaa")
 		}
 	})
 }
 
 func doLoggerBenchmarkNoLock(b *testing.B, out *os.File, formatter Formatter, fields Fields) {
 	logger := Logger{
-		Out:       out,
-		Level:     InfoLevel,
-		Formatter: formatter,
+		out:       out,
+		level:     InfoLevel,
+		formatter: formatter,
 	}
 	logger.SetNoLock()
 	entry := logger.WithFields(fields)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			entry.Info("aaa")
+			entry.Write("aaa")
 		}
 	})
 }

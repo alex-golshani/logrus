@@ -4,16 +4,23 @@ import "time"
 
 const defaultTimestampFormat = time.RFC3339
 
-// The Formatter interface is used to implement a custom Formatter. It takes an
+const (
+	errorKey   = "error"
+	messageKey = "msg"
+	timeKey    = "time"
+	levelKey   = "level"
+)
+
+// The formatter interface is used to implement a custom formatter. It takes an
 // `Entry`. It exposes all the fields, including the default ones:
 //
-// * `entry.Data["msg"]`. The message passed from Info, Warn, Error ..
+// * `entry.Data["msg"]`. The Message passed from Info, Warn, Error ..
 // * `entry.Data["time"]`. The timestamp.
 // * `entry.Data["level"]. The level the entry was logged at.
 //
 // Any additional fields added with `WithField` or `WithFields` are also in
 // `entry.Data`. Format is expected to return an array of bytes which are then
-// logged to `logger.Out`.
+// logged to `Logger.out`.
 type Formatter interface {
 	Format(*Entry) ([]byte, error)
 }
@@ -31,15 +38,15 @@ type Formatter interface {
 // It's not exported because it's still using Data in an opinionated way. It's to
 // avoid code duplication between the two default formatters.
 func prefixFieldClashes(data Fields) {
-	if t, ok := data["time"]; ok {
+	if t, ok := data[timeKey]; ok {
 		data["fields.time"] = t
 	}
 
-	if m, ok := data["msg"]; ok {
+	if m, ok := data[messageKey]; ok {
 		data["fields.msg"] = m
 	}
 
-	if l, ok := data["level"]; ok {
+	if l, ok := data[levelKey]; ok {
 		data["fields.level"] = l
 	}
 }

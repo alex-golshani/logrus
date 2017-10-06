@@ -10,13 +10,6 @@ type fieldKey string
 // FieldMap allows customization of the key names for default fields.
 type FieldMap map[fieldKey]string
 
-// Default key names for the default fields
-const (
-	FieldKeyMsg   = "msg"
-	FieldKeyLevel = "level"
-	FieldKeyTime  = "time"
-)
-
 func (f FieldMap) resolve(key fieldKey) string {
 	if k, ok := f[key]; ok {
 		return k
@@ -39,7 +32,7 @@ type JSONFormatter struct {
 	//   	FieldMap: FieldMap{
 	// 		 FieldKeyTime: "@timestamp",
 	// 		 FieldKeyLevel: "@level",
-	// 		 FieldKeyMsg: "@message",
+	// 		 FieldKeyMsg: "@Message",
 	//    },
 	// }
 	FieldMap FieldMap
@@ -66,14 +59,14 @@ func (f *JSONFormatter) Format(entry *Entry) ([]byte, error) {
 	}
 
 	if !f.DisableTimestamp {
-		data[f.FieldMap.resolve(FieldKeyTime)] = entry.Time.Format(timestampFormat)
+		data[f.FieldMap.resolve(timeKey)] = entry.Time.Format(timestampFormat)
 	}
-	data[f.FieldMap.resolve(FieldKeyMsg)] = entry.Message
-	data[f.FieldMap.resolve(FieldKeyLevel)] = entry.Level.String()
+	data[f.FieldMap.resolve(messageKey)] = entry.Message
+	data[f.FieldMap.resolve(levelKey)] = entry.Level.String()
 
 	serialized, err := json.Marshal(data)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to marshal fields to JSON, %v", err)
+		return nil, fmt.Errorf("failed to marshal fields to JSON, %v", err)
 	}
 	return append(serialized, '\n'), nil
 }

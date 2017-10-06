@@ -63,15 +63,15 @@ func TestFieldClashWithTime(t *testing.T) {
 		t.Fatal("fields.time not set to original time field")
 	}
 
-	if entry["time"] != "0001-01-01T00:00:00Z" {
-		t.Fatal("time field not set to current time, was: ", entry["time"])
+	if entry[timeKey] != "0001-01-01T00:00:00Z" {
+		t.Fatal("time field not set to current time, was: ", entry[timeKey])
 	}
 }
 
 func TestFieldClashWithMsg(t *testing.T) {
 	formatter := &JSONFormatter{}
 
-	b, err := formatter.Format(WithField("msg", "something"))
+	b, err := formatter.Format(WithField(messageKey, "something"))
 	if err != nil {
 		t.Fatal("Unable to format entry: ", err)
 	}
@@ -90,7 +90,7 @@ func TestFieldClashWithMsg(t *testing.T) {
 func TestFieldClashWithLevel(t *testing.T) {
 	formatter := &JSONFormatter{}
 
-	b, err := formatter.Format(WithField("level", "something"))
+	b, err := formatter.Format(WithField(levelKey, "something"))
 	if err != nil {
 		t.Fatal("Unable to format entry: ", err)
 	}
@@ -109,7 +109,7 @@ func TestFieldClashWithLevel(t *testing.T) {
 func TestJSONEntryEndsWithNewline(t *testing.T) {
 	formatter := &JSONFormatter{}
 
-	b, err := formatter.Format(WithField("level", "something"))
+	b, err := formatter.Format(WithField(levelKey, "something"))
 	if err != nil {
 		t.Fatal("Unable to format entry: ", err)
 	}
@@ -122,7 +122,7 @@ func TestJSONEntryEndsWithNewline(t *testing.T) {
 func TestJSONMessageKey(t *testing.T) {
 	formatter := &JSONFormatter{
 		FieldMap: FieldMap{
-			FieldKeyMsg: "message",
+			messageKey: "Message",
 		},
 	}
 
@@ -131,19 +131,19 @@ func TestJSONMessageKey(t *testing.T) {
 		t.Fatal("Unable to format entry: ", err)
 	}
 	s := string(b)
-	if !(strings.Contains(s, "message") && strings.Contains(s, "oh hai")) {
-		t.Fatal("Expected JSON to format message key")
+	if !(strings.Contains(s, "Message") && strings.Contains(s, "oh hai")) {
+		t.Fatal("Expected JSON to format Message key")
 	}
 }
 
 func TestJSONLevelKey(t *testing.T) {
 	formatter := &JSONFormatter{
 		FieldMap: FieldMap{
-			FieldKeyLevel: "somelevel",
+			levelKey: "somelevel",
 		},
 	}
 
-	b, err := formatter.Format(WithField("level", "something"))
+	b, err := formatter.Format(WithField(levelKey, "something"))
 	if err != nil {
 		t.Fatal("Unable to format entry: ", err)
 	}
@@ -156,11 +156,11 @@ func TestJSONLevelKey(t *testing.T) {
 func TestJSONTimeKey(t *testing.T) {
 	formatter := &JSONFormatter{
 		FieldMap: FieldMap{
-			FieldKeyTime: "timeywimey",
+			timeKey: "timeywimey",
 		},
 	}
 
-	b, err := formatter.Format(WithField("level", "something"))
+	b, err := formatter.Format(WithField(levelKey, "something"))
 	if err != nil {
 		t.Fatal("Unable to format entry: ", err)
 	}
@@ -175,12 +175,12 @@ func TestJSONDisableTimestamp(t *testing.T) {
 		DisableTimestamp: true,
 	}
 
-	b, err := formatter.Format(WithField("level", "something"))
+	b, err := formatter.Format(WithField(levelKey, "something"))
 	if err != nil {
 		t.Fatal("Unable to format entry: ", err)
 	}
 	s := string(b)
-	if strings.Contains(s, FieldKeyTime) {
+	if strings.Contains(s, timeKey) {
 		t.Error("Did not prevent timestamp", s)
 	}
 }
@@ -188,12 +188,12 @@ func TestJSONDisableTimestamp(t *testing.T) {
 func TestJSONEnableTimestamp(t *testing.T) {
 	formatter := &JSONFormatter{}
 
-	b, err := formatter.Format(WithField("level", "something"))
+	b, err := formatter.Format(WithField(levelKey, "something"))
 	if err != nil {
 		t.Fatal("Unable to format entry: ", err)
 	}
 	s := string(b)
-	if !strings.Contains(s, FieldKeyTime) {
+	if !strings.Contains(s, timeKey) {
 		t.Error("Timestamp not present", s)
 	}
 }
