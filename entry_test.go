@@ -3,11 +3,11 @@ package logrus
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"strconv"
 	"strings"
 	"testing"
 
-	"errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,8 +16,8 @@ func logEntryAndAssertJSON(loggerLevel Level, log func(*Entry), assertions func(
 	var fields Fields
 
 	logger := New(loggerLevel)
-	logger.Out = &buffer
-	logger.Formatter = new(JSONFormatter)
+	logger.SetOutput(&buffer)
+	logger.SetFormatter(new(JSONFormatter))
 
 	entry := NewEntry(logger)
 
@@ -33,10 +33,10 @@ func logEntryAndAssertText(t *testing.T, loggerLevel Level, log func(*Entry), as
 
 	var buffer bytes.Buffer
 	logger := New(loggerLevel)
-	logger.Out = &buffer
-	logger.Formatter = &TextFormatter{
+	logger.SetOutput(&buffer)
+	logger.SetFormatter(&TextFormatter{
 		DisableColors: true,
-	}
+	})
 
 	entry := NewEntry(logger)
 
@@ -73,19 +73,19 @@ func TestEntryLoggingWithTextFormatter(t *testing.T) {
 			title:       "entry_with_the_same_level_as_log_level_should_log",
 			loggerLevel: DebugLevel,
 			entryLevel:  DebugLevel,
-			message:     "message",
+			message:     "Message",
 		},
 		{
 			title:       "entry_with_the_level_lower_than_the_log_level_should_log",
 			loggerLevel: DebugLevel,
 			entryLevel:  InfoLevel,
-			message:     "message",
+			message:     "Message",
 		},
 		{
 			title:       "entry_with_the_level_higher_than_the_log_level_should_not_log",
 			loggerLevel: InfoLevel,
 			entryLevel:  DebugLevel,
-			message:     "message",
+			message:     "Message",
 		},
 	}
 	assrt := assert.New(t)
@@ -98,11 +98,11 @@ func TestEntryLoggingWithTextFormatter(t *testing.T) {
 				},
 				func(fields Fields, entry *Entry) {
 					assrt.Equal(tc.loggerLevel, entry.Level)
-					assrt.Equal(tc.loggerLevel, entry.logger.Level)
-					msg, ok := fields["msg"]
+					assrt.Equal(tc.loggerLevel, entry.Logger.level)
+					msg, ok := fields[messageKey]
 					if shouldLog {
 						if !ok {
-							t.Error("Failed to retrieve the message. Nothing was logged")
+							t.Error("Failed to retrieve the Message. Nothing was logged")
 						}
 						if logged, ok := checkLoggedField(tc.message, msg); !ok {
 							t.Errorf("expected %s, received '%v'", tc.message, logged)
@@ -154,11 +154,11 @@ func TestEntryLoggingWithJSONFormatter(t *testing.T) {
 				},
 				func(fields Fields, entry *Entry) {
 					assrt.Equal(tc.loggerLevel, entry.Level)
-					assrt.Equal(tc.loggerLevel, entry.logger.Level)
-					msg, ok := fields["msg"]
+					assrt.Equal(tc.loggerLevel, entry.Logger.level)
+					msg, ok := fields[messageKey]
 					if shouldLog {
 						if !ok {
-							t.Error("Failed to retrieve the message. Nothing was logged")
+							t.Error("Failed to retrieve the Message. Nothing was logged")
 						}
 						if logged, ok := checkLoggedField(tc.message, msg); !ok {
 							t.Errorf("expected %s, received '%v'", tc.message, logged)
@@ -210,12 +210,12 @@ func TestWithField(t *testing.T) {
 				},
 				func(fields Fields, entry *Entry) {
 					assrt.Equal(tc.loggerLevel, entry.Level)
-					assrt.Equal(tc.loggerLevel, entry.logger.Level)
-					msg, msgOk := fields["msg"]
+					assrt.Equal(tc.loggerLevel, entry.Logger.level)
+					msg, msgOk := fields[messageKey]
 					field, fieldOk := fields[fieldKey]
 					if shouldLog {
 						if !msgOk {
-							t.Error("Failed to retrieve the message. Nothing was logged")
+							t.Error("Failed to retrieve the Message. Nothing was logged")
 						}
 						if logged, ok := checkLoggedField(tc.message, msg); !ok {
 							t.Errorf("expected %s, received '%v'", tc.message, logged)
@@ -246,7 +246,7 @@ func TestWithFields(t *testing.T) {
 	}{
 		{
 			title:          "original_fields_should_not_change_after_logging",
-			message:        "message",
+			message:        "Message",
 			originalFields: Fields{"original_key": "original_value"},
 			logFields:      Fields{"log_field_key": "log_field_value"},
 			entryLevel:     DebugLevel,
@@ -255,7 +255,7 @@ func TestWithFields(t *testing.T) {
 		},
 		{
 			title:          "original_fields_should_get_logged_even_if_log_fields_are_empty",
-			message:        "message",
+			message:        "Message",
 			originalFields: Fields{"original_key": "original_value"},
 			logFields:      Fields{},
 			entryLevel:     DebugLevel,
@@ -264,7 +264,7 @@ func TestWithFields(t *testing.T) {
 		},
 		{
 			title:          "no_fields_should_get_logged_if_entry_level_is_higher_than_logger_level",
-			message:        "message",
+			message:        "Message",
 			originalFields: Fields{"original_key": "original_value"},
 			logFields:      Fields{"log_field_key": "log_field_value"},
 			entryLevel:     DebugLevel,
@@ -279,20 +279,20 @@ func TestWithFields(t *testing.T) {
 			var fields Fields
 
 			logger := New(tc.loggerLevel)
-			logger.Out = &buffer
-			logger.Formatter = new(JSONFormatter)
+			logger.SetOutput(&buffer)
+			logger.SetFormatter(new(JSONFormatter))
 			entry := logger.WithFields(tc.originalFields)
 			entry.AsLevel(tc.entryLevel).WithFields(tc.logFields).Write(tc.message)
 
 			json.Unmarshal(buffer.Bytes(), &fields)
 
-			assrt.Equal(entry.data, tc.originalFields)
+			assrt.Equal(entry.Data, tc.originalFields)
 			assrt.Equal(tc.loggerLevel, entry.Level)
 
 			if tc.shouldLog {
-				msg, ok := fields["msg"]
+				msg, ok := fields[messageKey]
 				if !ok {
-					t.Error("Failed to retrieve the message. Nothing was logged")
+					t.Error("Failed to retrieve the Message. Nothing was logged")
 				}
 
 				if logged, ok := checkLoggedField(tc.message, msg); !ok {
@@ -323,7 +323,7 @@ func TestWithError(t *testing.T) {
 	}{
 		{
 			title:          "original_fields_and_error_should_get_logged",
-			message:        "message",
+			message:        "Message",
 			originalFields: Fields{"original_key": "original_value"},
 			err:            errors.New("test error"),
 			entryLevel:     DebugLevel,
@@ -332,7 +332,7 @@ func TestWithError(t *testing.T) {
 		},
 		{
 			title:          "no_fields_should_get_logged_if_entry_level_is_higher_than_logger_level",
-			message:        "message",
+			message:        "Message",
 			originalFields: Fields{"original_key": "original_value"},
 			err:            errors.New("test error"),
 			entryLevel:     DebugLevel,
@@ -347,33 +347,33 @@ func TestWithError(t *testing.T) {
 			var fields Fields
 
 			logger := New(tc.loggerLevel)
-			logger.Out = &buffer
-			logger.Formatter = new(JSONFormatter)
+			logger.SetOutput(&buffer)
+			logger.SetFormatter(new(JSONFormatter))
 			entry := logger.WithFields(tc.originalFields)
 			cloned := entry.AsLevel(tc.entryLevel).WithError(tc.err)
 			cloned.Write(tc.message)
 
 			json.Unmarshal(buffer.Bytes(), &fields)
 
-			assrt.Equal(entry.data, tc.originalFields)
+			assrt.Equal(entry.Data, tc.originalFields)
 			assrt.Equal(tc.loggerLevel, entry.Level)
 
 			if tc.shouldLog {
-				msg, ok := fields["msg"]
+				msg, ok := fields[messageKey]
 				if !ok {
-					t.Error("Failed to retrieve the message. Nothing was logged")
+					t.Error("Failed to retrieve the Message. Nothing was logged")
 				}
 
 				if logged, ok := checkLoggedField(tc.message, msg); !ok {
 					t.Errorf("expected %s, received '%v'", tc.message, logged)
 				}
 
-				assertFields(t, Fields{ErrorKey: tc.err.Error()}, fields)
+				assertFields(t, Fields{errorKey: tc.err.Error()}, fields)
 				assertFields(t, tc.originalFields, fields)
 
 				return
 			}
-			assertFields(t, tc.originalFields, cloned.data)
+			assertFields(t, tc.originalFields, cloned.Data)
 			if len(fields) > 0 {
 				t.Errorf("we shouldn't have logged anything but the output was %v", fields)
 			}
@@ -384,7 +384,8 @@ func TestWithError(t *testing.T) {
 func TestEntryInstantiation(t *testing.T) {
 	logger := New(InfoLevel)
 	buf := &bytes.Buffer{}
-	logger.Out = buf
+	logger.out = buf
+	logger.formatter = new(JSONFormatter)
 
 	testCases := []struct {
 		title    string
@@ -392,18 +393,6 @@ func TestEntryInstantiation(t *testing.T) {
 		writable bool
 		message  string
 	}{
-		{
-			title:    "invalid_log_entry_should_not_log",
-			entry:    &Entry{},
-			writable: false,
-		},
-		{
-			title: "an_entry_with_manually_set_level_should_not_log",
-			entry: &Entry{
-				Level: DebugLevel,
-			},
-			writable: false,
-		},
 		{
 			title:    "valid_entry_should_log",
 			entry:    NewEntry(logger),
@@ -457,9 +446,9 @@ func assertEmptyOutput(t *testing.T, output *bytes.Buffer) {
 func assertLoggedMessage(t *testing.T, expected string, output *bytes.Buffer) {
 	t.Helper()
 	fields := inspectJsonOutput(t, output)
-	msg, ok := fields["msg"]
+	msg, ok := fields[messageKey]
 	if !ok {
-		t.Error("Failed to retrieve the message. Nothing was logged")
+		t.Error("Failed to retrieve the Message. Nothing was logged")
 	}
 	if logged, ok := checkLoggedField(expected, msg); !ok {
 		t.Errorf("expected %s, received '%v'", expected, logged)

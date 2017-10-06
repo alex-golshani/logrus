@@ -28,12 +28,12 @@ type Entry struct {
 // NewEntry creates a new log entry
 func NewEntry(logger *Logger) *Entry {
 	// Default is three fields, give a little extra room
-	return newLogEntry(logger, logger.Level, make(Fields, 5))
+	return newLogEntry(logger, logger.level, make(Fields, 5))
 }
 
 // NewEntryWithFields creates a new log entry and adds a struct of fields to the entry
 func NewEntryWithFields(logger *Logger, fields Fields) *Entry {
-	return newLogEntry(logger, logger.Level, fields)
+	return newLogEntry(logger, logger.level, fields)
 }
 
 // NewEntryWithField creates a new log entry and adds a field to the entry
@@ -42,46 +42,46 @@ func NewEntryWithField(logger *Logger, key string, value interface{}) *Entry {
 	//Do not change this to Fields{key:value}. You will end up getting more allocations
 	fields := make(Fields, 1)
 	fields[key] = value
-	return newLogEntry(logger, logger.Level, fields)
+	return newLogEntry(logger, logger.level, fields)
 }
 
-// AsLevel clones the entry into a new log entry and sets the Level to the specified value.
+// AsLevel clones the entry into a new log entry and sets the level to the specified value.
 // Make sure you call this method before calling WithField, WithFields and WithError methods
 func (entry *Entry) AsLevel(level Level) *Entry {
 	return newLogEntry(entry.Logger, level, entry.Data)
 }
 
-// AsDebug clones the entry into a new log entry and sets the Level to `debug`
+// AsDebug clones the entry into a new log entry and sets the level to `debug`
 // Make sure you call this method before calling WithField, WithFields and WithError methods
 func (entry *Entry) AsDebug() *Entry {
 	return entry.AsLevel(DebugLevel)
 }
 
-// AsInfo clones the entry into a new log entry and sets the Level to `info`
+// AsInfo clones the entry into a new log entry and sets the level to `info`
 // Make sure you call this method before calling WithField, WithFields and WithError methods
 func (entry *Entry) AsInfo() *Entry {
 	return entry.AsLevel(InfoLevel)
 }
 
-// AsWarning clones the entry into a new log entry and sets the Level to `warning`
+// AsWarning clones the entry into a new log entry and sets the level to `warning`
 // Make sure you call this method before calling WithField, WithFields and WithError methods
 func (entry *Entry) AsWarning() *Entry {
 	return entry.AsLevel(WarnLevel)
 }
 
-// AsError clones the entry into a new log entry and sets the Level to `error`
+// AsError clones the entry into a new log entry and sets the level to `error`
 // Make sure you call this method before calling WithField, WithFields and WithError methods
 func (entry *Entry) AsError() *Entry {
 	return entry.AsLevel(ErrorLevel)
 }
 
-// AsFatal clones the entry into a new log entry and sets the Level to `fatal`
+// AsFatal clones the entry into a new log entry and sets the level to `fatal`
 // Make sure you call this method before calling WithField, WithFields and WithError methods
 func (entry *Entry) AsFatal() *Entry {
 	return entry.AsLevel(FatalLevel)
 }
 
-// AsPanic clones the entry into a new log entry and sets the Level to `panic`
+// AsPanic clones the entry into a new log entry and sets the level to `panic`
 // Make sure you call this method before calling WithField, WithFields and WithError methods
 func (entry *Entry) AsPanic() *Entry {
 	return entry.AsLevel(PanicLevel)
@@ -89,7 +89,7 @@ func (entry *Entry) AsPanic() *Entry {
 
 // WithField adds a field to the log entry, note that it doesn't log until you call Write.
 func (entry *Entry) WithField(key string, value interface{}) *Entry {
-	if entry.Level > entry.Logger.level() {
+	if entry.Level > entry.Logger.getLevel() {
 		return entry
 	}
 	//Do not change this to Fields{key:value}. You will end up getting more allocations
@@ -100,7 +100,7 @@ func (entry *Entry) WithField(key string, value interface{}) *Entry {
 
 // WithFields adds a struct of fields to the log entry
 func (entry *Entry) WithFields(fields Fields) *Entry {
-	if entry.Level > entry.Logger.level() {
+	if entry.Level > entry.Logger.getLevel() {
 		return entry
 	}
 	data := make(Fields, len(entry.Data)+len(fields))
@@ -139,7 +139,7 @@ func newLogEntry(logger *Logger, level Level, data Fields) *Entry {
 }
 
 func (entry *Entry) write(mode formatMode, format string, args ...interface{}) {
-	if entry.Logger.level() >= entry.Level {
+	if entry.Logger.getLevel() >= entry.Level {
 		message := constructMessage(mode, format, args...)
 		entry.log(message)
 	}
@@ -161,26 +161,26 @@ func (entry *Entry) log(msg string) {
 	entry.Time = time.Now()
 	entry.Message = msg
 
-	entry.Logger.Lock()
-	err := entry.Logger.Hooks.Fire(entry.Level, entry)
-	entry.Logger.Unlock()
+	entry.Logger.mux.Lock()
+	err := entry.Logger.hooks.Fire(entry.Level, entry)
+	entry.Logger.mux.Unlock()
 	if err != nil {
-		entry.Logger.Lock()
+		entry.Logger.mux.Lock()
 		fmt.Fprintf(os.Stderr, "Failed to fire the hook: %v\n", err)
-		entry.Logger.Unlock()
+		entry.Logger.mux.Unlock()
 	}
-	serialized, err := entry.Logger.Formatter.Format(entry)
+	serialized, err := entry.Logger.formatter.Format(entry)
 	if err != nil {
-		entry.Logger.Lock()
+		entry.Logger.mux.Lock()
 		fmt.Fprintf(os.Stderr, "Failed to obtain reader, %v\n", err)
-		entry.Logger.Unlock()
+		entry.Logger.mux.Unlock()
 	} else {
-		entry.Logger.Lock()
-		_, err = entry.Logger.Out.Write(serialized)
+		entry.Logger.mux.Lock()
+		_, err = entry.Logger.out.Write(serialized)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to write to log, %v\n", err)
 		}
-		entry.Logger.Unlock()
+		entry.Logger.mux.Unlock()
 	}
 
 	if entry.Level == FatalLevel {
@@ -195,10 +195,10 @@ func (entry *Entry) log(msg string) {
 	}
 }
 
-// Returns the string representation from the reader and ultimately the
+// String returns the string representation from the reader and ultimately the
 // formatter.
 func (entry *Entry) String() (string, error) {
-	serialized, err := entry.Logger.Formatter.Format(entry)
+	serialized, err := entry.Logger.formatter.Format(entry)
 	if err != nil {
 		return "", err
 	}
@@ -206,7 +206,7 @@ func (entry *Entry) String() (string, error) {
 	return str, nil
 }
 
-// Sprintlnn => Sprint no newline. This is to get the behavior of how
+// sprintlnn => Sprint no newline. This is to get the behavior of how
 // fmt.Sprintln where spaces are always added between operands, regardless of
 // their type. Instead of vendoring the Sprintln implementation to spare a
 // string allocation, we do the simplest thing.
