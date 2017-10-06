@@ -3,20 +3,12 @@ package logrus
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 )
 
 type fieldKey string
 
 // FieldMap allows customization of the key names for default fields.
 type FieldMap map[fieldKey]string
-
-// Default key names for the default fields
-const (
-	FieldKeyMsg   = "msg"
-	FieldKeyLevel = "level"
-	FieldKeyTime  = "time"
-)
 
 func (f FieldMap) resolve(key fieldKey) string {
 	if k, ok := f[key]; ok {
@@ -40,7 +32,7 @@ type JSONFormatter struct {
 	//   	FieldMap: FieldMap{
 	// 		 FieldKeyTime: "@timestamp",
 	// 		 FieldKeyLevel: "@level",
-	// 		 FieldKeyMsg: "@message",
+	// 		 FieldKeyMsg: "@Message",
 	//    },
 	// }
 	FieldMap FieldMap
@@ -48,17 +40,8 @@ type JSONFormatter struct {
 
 // Format renders a single log entry
 func (f *JSONFormatter) Format(entry *Entry) ([]byte, error) {
-	return f.format(entry.Data, entry.Time, entry.Level, entry.Message)
-}
-
-// Format renders a single log entry
-func (f *JSONFormatter) FormatEntry(entry *LogEntry) ([]byte, error) {
-	return f.format(entry.Data, entry.Time, entry.Level, entry.Message)
-}
-
-func (f *JSONFormatter) format(fields Fields, t time.Time, level Level, message string) ([]byte, error) {
-	data := make(Fields, len(fields)+3)
-	for k, v := range fields {
+	data := make(Fields, len(entry.Data)+3)
+	for k, v := range entry.Data {
 		switch v := v.(type) {
 		case error:
 			// Otherwise errors are ignored by `encoding/json`
@@ -76,10 +59,10 @@ func (f *JSONFormatter) format(fields Fields, t time.Time, level Level, message 
 	}
 
 	if !f.DisableTimestamp {
-		data[f.FieldMap.resolve(FieldKeyTime)] = t.Format(timestampFormat)
+		data[f.FieldMap.resolve(timeKey)] = entry.Time.Format(timestampFormat)
 	}
-	data[f.FieldMap.resolve(FieldKeyMsg)] = message
-	data[f.FieldMap.resolve(FieldKeyLevel)] = level.String()
+	data[f.FieldMap.resolve(messageKey)] = entry.Message
+	data[f.FieldMap.resolve(levelKey)] = entry.Level.String()
 
 	serialized, err := json.Marshal(data)
 	if err != nil {

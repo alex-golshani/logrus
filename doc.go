@@ -15,12 +15,12 @@ The simplest way to use Logrus is simply the package-level exported logger:
       "animal": "walrus",
       "number": 1,
       "size":   10,
-    }).Info("A walrus appears")
+    }).Write("A walrus appears")
   }
 
 Output:
   time="2015-09-07T08:48:33Z" level=info msg="A walrus appears" animal=walrus number=1 size=10
 
-For a full guide visit https://github.com/sirupsen/logrus
+For a full guide visit https://github.com/xitonix/logrus
 */
 package logrus

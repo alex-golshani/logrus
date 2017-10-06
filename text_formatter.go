@@ -57,35 +57,22 @@ type TextFormatter struct {
 	// QuoteEmptyFields will wrap empty fields in quotes if true
 	QuoteEmptyFields bool
 
-	// Whether the logger's out is to a terminal
+	// Whether the Logger's out is to a terminal
 	isTerminal bool
 
 	sync.Once
-}
-
-func (f *TextFormatter) FormatEntry(entry *LogEntry) ([]byte, error) {
-	f.Do(func() {
-		if entry.Logger != nil {
-			f.init(entry.Logger.Out)
-		}
-	})
-	return f.format(entry.Data, entry.Level, entry.Message, entry.Time)
 }
 
 // Format renders a single log entry
 func (f *TextFormatter) Format(entry *Entry) ([]byte, error) {
 	f.Do(func() {
 		if entry.Logger != nil {
-			f.init(entry.Logger.Out)
+			f.init(entry.Logger.out)
 		}
 	})
-	return f.format(entry.Data, entry.Level, entry.Message, entry.Time)
-}
-
-func (f *TextFormatter) format(fields Fields, level Level, message string, t time.Time) ([]byte, error) {
 	b := &bytes.Buffer{}
-	keys := make([]string, 0, len(fields))
-	for k := range fields {
+	keys := make([]string, 0, len(entry.Data))
+	for k := range entry.Data {
 		keys = append(keys, k)
 	}
 
@@ -93,7 +80,7 @@ func (f *TextFormatter) format(fields Fields, level Level, message string, t tim
 		sort.Strings(keys)
 	}
 
-	prefixFieldClashes(fields)
+	prefixFieldClashes(entry.Data)
 
 	isColored := (f.ForceColors || f.isTerminal) && !f.DisableColors
 
@@ -102,17 +89,17 @@ func (f *TextFormatter) format(fields Fields, level Level, message string, t tim
 		timestampFormat = defaultTimestampFormat
 	}
 	if isColored {
-		f.printColored(b, level, message, t, fields, keys, timestampFormat)
+		f.printColored(b, entry.Level, entry.Message, entry.Time, entry.Data, keys, timestampFormat)
 	} else {
 		if !f.DisableTimestamp {
-			f.appendKeyValue(b, "time", t.Format(timestampFormat))
+			f.appendKeyValue(b, timeKey, entry.Time.Format(timestampFormat))
 		}
-		f.appendKeyValue(b, "level", level.String())
-		if message != "" {
-			f.appendKeyValue(b, "msg", message)
+		f.appendKeyValue(b, levelKey, entry.Level.String())
+		if len(entry.Message) > 0 {
+			f.appendKeyValue(b, messageKey, entry.Message)
 		}
 		for _, key := range keys {
-			f.appendKeyValue(b, key, fields[key])
+			f.appendKeyValue(b, key, entry.Data[key])
 		}
 	}
 

@@ -15,7 +15,7 @@ func Example_basic() {
 
 	// file, err := os.OpenFile("logrus.log", os.O_CREATE|os.O_WRONLY, 0666)
 	// if err == nil {
-	// 	log.Out = file
+	// 	log.out = file
 	// } else {
 	// 	log.Info("Failed to log to file, using default stderr")
 	// }

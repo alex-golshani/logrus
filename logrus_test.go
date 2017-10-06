@@ -15,9 +15,9 @@ func LogAndAssertJSON(t *testing.T, log func(*Logger), assertions func(fields Fi
 	var buffer bytes.Buffer
 	var fields Fields
 
-	logger := New()
-	logger.Out = &buffer
-	logger.Formatter = new(JSONFormatter)
+	logger := New(InfoLevel)
+	logger.out = &buffer
+	logger.formatter = new(JSONFormatter)
 
 	log(logger)
 
@@ -30,9 +30,9 @@ func LogAndAssertJSON(t *testing.T, log func(*Logger), assertions func(fields Fi
 func LogAndAssertText(t *testing.T, log func(*Logger), assertions func(fields map[string]string)) {
 	var buffer bytes.Buffer
 
-	logger := New()
-	logger.Out = &buffer
-	logger.Formatter = &TextFormatter{
+	logger := New(InfoLevel)
+	logger.out = &buffer
+	logger.formatter = &TextFormatter{
 		DisableColors: true,
 	}
 
@@ -56,30 +56,21 @@ func LogAndAssertText(t *testing.T, log func(*Logger), assertions func(fields ma
 	assertions(fields)
 }
 
-func TestPrint(t *testing.T) {
-	LogAndAssertJSON(t, func(log *Logger) {
-		log.Print("test")
-	}, func(fields Fields) {
-		assert.Equal(t, fields["msg"], "test")
-		assert.Equal(t, fields["level"], "info")
-	})
-}
-
 func TestInfo(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.Info("test")
 	}, func(fields Fields) {
-		assert.Equal(t, fields["msg"], "test")
-		assert.Equal(t, fields["level"], "info")
+		assert.Equal(t, fields[messageKey], "test")
+		assert.Equal(t, fields[levelKey], "info")
 	})
 }
 
 func TestWarn(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
-		log.Warn("test")
+		log.Warning("test")
 	}, func(fields Fields) {
-		assert.Equal(t, fields["msg"], "test")
-		assert.Equal(t, fields["level"], "warning")
+		assert.Equal(t, fields[messageKey], "test")
+		assert.Equal(t, fields[levelKey], "warning")
 	})
 }
 
@@ -87,7 +78,7 @@ func TestInfolnShouldAddSpacesBetweenStrings(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.Infoln("test", "test")
 	}, func(fields Fields) {
-		assert.Equal(t, fields["msg"], "test test")
+		assert.Equal(t, fields[messageKey], "test test")
 	})
 }
 
@@ -95,7 +86,7 @@ func TestInfolnShouldAddSpacesBetweenStringAndNonstring(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.Infoln("test", 10)
 	}, func(fields Fields) {
-		assert.Equal(t, fields["msg"], "test 10")
+		assert.Equal(t, fields[messageKey], "test 10")
 	})
 }
 
@@ -103,7 +94,7 @@ func TestInfolnShouldAddSpacesBetweenTwoNonStrings(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.Infoln(10, 10)
 	}, func(fields Fields) {
-		assert.Equal(t, fields["msg"], "10 10")
+		assert.Equal(t, fields[messageKey], "10 10")
 	})
 }
 
@@ -111,7 +102,7 @@ func TestInfoShouldAddSpacesBetweenTwoNonStrings(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.Infoln(10, 10)
 	}, func(fields Fields) {
-		assert.Equal(t, fields["msg"], "10 10")
+		assert.Equal(t, fields[messageKey], "10 10")
 	})
 }
 
@@ -119,7 +110,7 @@ func TestInfoShouldNotAddSpacesBetweenStringAndNonstring(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.Info("test", 10)
 	}, func(fields Fields) {
-		assert.Equal(t, fields["msg"], "test10")
+		assert.Equal(t, fields[messageKey], "test10")
 	})
 }
 
@@ -127,7 +118,7 @@ func TestInfoShouldNotAddSpacesBetweenStrings(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
 		log.Info("test", "test")
 	}, func(fields Fields) {
-		assert.Equal(t, fields["msg"], "testtest")
+		assert.Equal(t, fields[messageKey], "testtest")
 	})
 }
 
@@ -135,15 +126,15 @@ func TestWithFieldsShouldAllowAssignments(t *testing.T) {
 	var buffer bytes.Buffer
 	var fields Fields
 
-	logger := New()
-	logger.Out = &buffer
-	logger.Formatter = new(JSONFormatter)
+	logger := New(InfoLevel)
+	logger.out = &buffer
+	logger.formatter = new(JSONFormatter)
 
 	localLog := logger.WithFields(Fields{
 		"key1": "value1",
 	})
 
-	localLog.WithField("key2", "value2").Info("test")
+	localLog.WithField("key2", "value2").Write("test")
 	err := json.Unmarshal(buffer.Bytes(), &fields)
 	assert.Nil(t, err)
 
@@ -152,7 +143,7 @@ func TestWithFieldsShouldAllowAssignments(t *testing.T) {
 
 	buffer = bytes.Buffer{}
 	fields = Fields{}
-	localLog.Info("test")
+	localLog.Write("test")
 	err = json.Unmarshal(buffer.Bytes(), &fields)
 	assert.Nil(t, err)
 
@@ -163,24 +154,24 @@ func TestWithFieldsShouldAllowAssignments(t *testing.T) {
 
 func TestUserSuppliedFieldDoesNotOverwriteDefaults(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
-		log.WithField("msg", "hello").Info("test")
+		log.WithField(messageKey, "hello").Write("test")
 	}, func(fields Fields) {
-		assert.Equal(t, fields["msg"], "test")
+		assert.Equal(t, fields[messageKey], "test")
 	})
 }
 
 func TestUserSuppliedMsgFieldHasPrefix(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
-		log.WithField("msg", "hello").Info("test")
+		log.WithField(messageKey, "hello").Write("test")
 	}, func(fields Fields) {
-		assert.Equal(t, fields["msg"], "test")
+		assert.Equal(t, fields[messageKey], "test")
 		assert.Equal(t, fields["fields.msg"], "hello")
 	})
 }
 
 func TestUserSuppliedTimeFieldHasPrefix(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
-		log.WithField("time", "hello").Info("test")
+		log.WithField("time", "hello").Write("test")
 	}, func(fields Fields) {
 		assert.Equal(t, fields["fields.time"], "hello")
 	})
@@ -188,9 +179,9 @@ func TestUserSuppliedTimeFieldHasPrefix(t *testing.T) {
 
 func TestUserSuppliedLevelFieldHasPrefix(t *testing.T) {
 	LogAndAssertJSON(t, func(log *Logger) {
-		log.WithField("level", 1).Info("test")
+		log.WithField(levelKey, 1).Write("test")
 	}, func(fields Fields) {
-		assert.Equal(t, fields["level"], "info")
+		assert.Equal(t, fields[levelKey], "info")
 		assert.Equal(t, fields["fields.level"], 1.0) // JSON has floats only
 	})
 }
@@ -198,8 +189,8 @@ func TestUserSuppliedLevelFieldHasPrefix(t *testing.T) {
 func TestDefaultFieldsAreNotPrefixed(t *testing.T) {
 	LogAndAssertText(t, func(log *Logger) {
 		ll := log.WithField("herp", "derp")
-		ll.Info("hello")
-		ll.Info("bye")
+		ll.Write("hello")
+		ll.Write("bye")
 	}, func(fields map[string]string) {
 		for _, fieldName := range []string{"fields.level", "fields.time", "fields.msg"} {
 			if _, ok := fields[fieldName]; ok {
@@ -214,28 +205,28 @@ func TestDoubleLoggingDoesntPrefixPreviousFields(t *testing.T) {
 	var buffer bytes.Buffer
 	var fields Fields
 
-	logger := New()
-	logger.Out = &buffer
-	logger.Formatter = new(JSONFormatter)
+	logger := New(InfoLevel)
+	logger.out = &buffer
+	logger.formatter = new(JSONFormatter)
 
 	llog := logger.WithField("context", "eating raw fish")
 
-	llog.Info("looks delicious")
+	llog.Write("looks delicious")
 
 	err := json.Unmarshal(buffer.Bytes(), &fields)
-	assert.NoError(t, err, "should have decoded first message")
+	assert.NoError(t, err, "should have decoded first Message")
 	assert.Equal(t, len(fields), 4, "should only have msg/time/level/context fields")
-	assert.Equal(t, fields["msg"], "looks delicious")
+	assert.Equal(t, fields[messageKey], "looks delicious")
 	assert.Equal(t, fields["context"], "eating raw fish")
 
 	buffer.Reset()
 
-	llog.Warn("omg it is!")
+	llog.AsWarning().Write("omg it is!")
 
 	err = json.Unmarshal(buffer.Bytes(), &fields)
-	assert.NoError(t, err, "should have decoded second message")
+	assert.NoError(t, err, "should have decoded second Message")
 	assert.Equal(t, len(fields), 4, "should only have msg/time/level/context fields")
-	assert.Equal(t, fields["msg"], "omg it is!")
+	assert.Equal(t, fields[messageKey], "omg it is!")
 	assert.Equal(t, fields["context"], "eating raw fish")
 	assert.Nil(t, fields["fields.msg"], "should not have prefixed previous `msg` entry")
 
@@ -308,28 +299,12 @@ func TestParseLevel(t *testing.T) {
 	assert.Equal(t, DebugLevel, l)
 
 	l, err = ParseLevel("invalid")
-	assert.Equal(t, "not a valid logrus Level: \"invalid\"", err.Error())
+	assert.Equal(t, "not a valid logrus level: \"invalid\"", err.Error())
 }
 
-func TestGetSetLevelRace(t *testing.T) {
-	wg := sync.WaitGroup{}
-	for i := 0; i < 100; i++ {
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
-			if i%2 == 0 {
-				SetLevel(InfoLevel)
-			} else {
-				GetLevel()
-			}
-		}(i)
-
-	}
-	wg.Wait()
-}
 
 func TestLoggingRace(t *testing.T) {
-	logger := New()
+	logger := New(InfoLevel)
 
 	var wg sync.WaitGroup
 	wg.Add(100)
@@ -348,21 +323,17 @@ func TestLogrusInterface(t *testing.T) {
 	var buffer bytes.Buffer
 	fn := func(l FieldLogger) {
 		b := l.WithField("key", "value")
-		b.Debug("Test")
+		b.AsDebug().Write("Test")
 	}
-	// test logger
-	logger := New()
-	logger.Out = &buffer
+	// test Logger
+	logger := New(InfoLevel)
+	logger.out = &buffer
 	fn(logger)
-
-	// test Entry
-	e := logger.WithField("another", "value")
-	fn(e)
 }
 
 // Implements io.Writer using channels for synchronization, so we can wait on
 // the Entry.Writer goroutine to write in a non-racey way. This does assume that
-// there is a single call to Logger.Out for each message.
+// there is a single call to Logger.out for each Message.
 type channelWriter chan []byte
 
 func (cw channelWriter) Write(p []byte) (int, error) {
@@ -372,9 +343,9 @@ func (cw channelWriter) Write(p []byte) (int, error) {
 
 func TestEntryWriter(t *testing.T) {
 	cw := channelWriter(make(chan []byte, 1))
-	log := New()
-	log.Out = cw
-	log.Formatter = new(JSONFormatter)
+	log := New(InfoLevel)
+	log.out = cw
+	log.formatter = new(JSONFormatter)
 	log.WithField("foo", "bar").WriterLevel(WarnLevel).Write([]byte("hello\n"))
 
 	bs := <-cw
@@ -382,5 +353,5 @@ func TestEntryWriter(t *testing.T) {
 	err := json.Unmarshal(bs, &fields)
 	assert.Nil(t, err)
 	assert.Equal(t, fields["foo"], "bar")
-	assert.Equal(t, fields["level"], "warning")
+	assert.Equal(t, fields[levelKey], "warning")
 }

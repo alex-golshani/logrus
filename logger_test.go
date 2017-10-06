@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"encoding/json"
 )
-func writeLogAndAssertJSON(loggerLevel Level, log func(*LogWriter), assertions func(Fields, *LogWriter)) {
+func writeLogAndAssertJSON(loggerLevel Level, log func(*Logger), assertions func(Fields, *Logger)) {
 	var buffer bytes.Buffer
 	var fields Fields
 
-	logger := NewLogger(loggerLevel)
-	logger.Out = &buffer
-	logger.Formatter = new(JSONFormatter)
+	logger := New(loggerLevel)
+	logger.out = &buffer
+	logger.formatter = new(JSONFormatter)
 
 	log(logger)
 
@@ -24,13 +24,13 @@ func writeLogAndAssertJSON(loggerLevel Level, log func(*LogWriter), assertions f
 	assertions(fields, logger)
 }
 
-func writeLogAndAssertText(t *testing.T, loggerLevel Level, log func(*LogWriter), assertions func(Fields, *LogWriter)) {
+func writeLogAndAssertText(t *testing.T, loggerLevel Level, log func(*Logger), assertions func(Fields, *Logger)) {
 	t.Helper()
 
 	var buffer bytes.Buffer
-	logger := NewLogger(loggerLevel)
-	logger.Out = &buffer
-	logger.Formatter = &TextFormatter{
+	logger := New(loggerLevel)
+	logger.out = &buffer
+	logger.formatter = &TextFormatter{
 		DisableColors: true,
 	}
 
@@ -56,7 +56,7 @@ func writeLogAndAssertText(t *testing.T, loggerLevel Level, log func(*LogWriter)
 	assertions(fields, logger)
 }
 
-func TestLogWriterDebugText(t *testing.T) {
+func TestLoggerDebugText(t *testing.T) {
 	testCases := []struct {
 		title       string
 		loggerLevel Level
@@ -66,13 +66,13 @@ func TestLogWriterDebugText(t *testing.T) {
 		{
 			title:       "logging_with_the_same_level_as_log_level_should_log",
 			loggerLevel: DebugLevel,
-			message:     "message",
+			message:     "Message",
 			shouldLog:   true,
 		},
 		{
 			title:       "logging_with_the_level_higher_than_the_log_level_should_not_log",
 			loggerLevel: InfoLevel,
-			message:     "message",
+			message:     "Message",
 			shouldLog:   false,
 		},
 	}
@@ -80,15 +80,15 @@ func TestLogWriterDebugText(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.title, func(t *testing.T) {
 			writeLogAndAssertText(t, tc.loggerLevel,
-				func(lw *LogWriter) {
+				func(lw *Logger) {
 					lw.Debug(tc.message)
 				},
-				func(fields Fields, lw *LogWriter) {
-					assrt.Equal(tc.loggerLevel, lw.Level)
-					msg, ok := fields["msg"]
+				func(fields Fields, lw *Logger) {
+					assrt.Equal(tc.loggerLevel, lw.level)
+					msg, ok := fields[messageKey]
 					if tc.shouldLog {
 						if !ok {
-							t.Error("Failed to retrieve the message. Nothing was logged")
+							t.Error("Failed to retrieve the Message. Nothing was logged")
 						}
 						if logged, ok := checkLoggedField(tc.message, msg); !ok {
 							t.Errorf("expected %s, received '%v'", tc.message, logged)
@@ -103,7 +103,7 @@ func TestLogWriterDebugText(t *testing.T) {
 	}
 }
 
-func TestLogWriterDebugJSON(t *testing.T) {
+func TestLoggerDebugJSON(t *testing.T) {
 	testCases := []struct {
 		title       string
 		loggerLevel Level
@@ -113,13 +113,13 @@ func TestLogWriterDebugJSON(t *testing.T) {
 		{
 			title:       "logging_with_the_same_level_as_log_level_should_log",
 			loggerLevel: DebugLevel,
-			message:     "message",
+			message:     "Message",
 			shouldLog:   true,
 		},
 		{
 			title:       "logging_with_the_level_higher_than_the_log_level_should_not_log",
 			loggerLevel: InfoLevel,
-			message:     "message",
+			message:     "Message",
 			shouldLog:   false,
 		},
 	}
@@ -127,15 +127,15 @@ func TestLogWriterDebugJSON(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.title, func(t *testing.T) {
 			writeLogAndAssertJSON(tc.loggerLevel,
-				func(lw *LogWriter) {
+				func(lw *Logger) {
 					lw.Debug(tc.message)
 				},
-				func(fields Fields, lw *LogWriter) {
-					assrt.Equal(tc.loggerLevel, lw.Level)
-					msg, ok := fields["msg"]
+				func(fields Fields, lw *Logger) {
+					assrt.Equal(tc.loggerLevel, lw.level)
+					msg, ok := fields[messageKey]
 					if tc.shouldLog {
 						if !ok {
-							t.Error("Failed to retrieve the message. Nothing was logged")
+							t.Error("Failed to retrieve the Message. Nothing was logged")
 						}
 						if logged, ok := checkLoggedField(tc.message, msg); !ok {
 							t.Errorf("expected %s, received '%v'", tc.message, logged)
@@ -150,7 +150,7 @@ func TestLogWriterDebugJSON(t *testing.T) {
 	}
 }
 
-func TestLogWriterInfoText(t *testing.T) {
+func TestLoggerInfoText(t *testing.T) {
 	testCases := []struct {
 		title       string
 		loggerLevel Level
@@ -160,13 +160,13 @@ func TestLogWriterInfoText(t *testing.T) {
 		{
 			title:       "logging_with_the_same_level_as_log_level_should_log",
 			loggerLevel: DebugLevel,
-			message:     "message",
+			message:     "Message",
 			shouldLog:   true,
 		},
 		{
 			title:       "logging_with_the_level_higher_than_the_log_level_should_not_log",
 			loggerLevel: WarnLevel,
-			message:     "message",
+			message:     "Message",
 			shouldLog:   false,
 		},
 	}
@@ -174,15 +174,15 @@ func TestLogWriterInfoText(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.title, func(t *testing.T) {
 			writeLogAndAssertText(t, tc.loggerLevel,
-				func(lw *LogWriter) {
+				func(lw *Logger) {
 					lw.Info(tc.message)
 				},
-				func(fields Fields, lw *LogWriter) {
-					assrt.Equal(tc.loggerLevel, lw.Level)
-					msg, ok := fields["msg"]
+				func(fields Fields, lw *Logger) {
+					assrt.Equal(tc.loggerLevel, lw.level)
+					msg, ok := fields[messageKey]
 					if tc.shouldLog {
 						if !ok {
-							t.Error("Failed to retrieve the message. Nothing was logged")
+							t.Error("Failed to retrieve the Message. Nothing was logged")
 						}
 						if logged, ok := checkLoggedField(tc.message, msg); !ok {
 							t.Errorf("expected %s, received '%v'", tc.message, logged)
@@ -197,7 +197,7 @@ func TestLogWriterInfoText(t *testing.T) {
 	}
 }
 
-func TestLogWriterInfoJSON(t *testing.T) {
+func TestLoggerInfoJSON(t *testing.T) {
 	testCases := []struct {
 		title       string
 		loggerLevel Level
@@ -207,13 +207,13 @@ func TestLogWriterInfoJSON(t *testing.T) {
 		{
 			title:       "logging_with_the_same_level_as_log_level_should_log",
 			loggerLevel: DebugLevel,
-			message:     "message",
+			message:     "Message",
 			shouldLog:   true,
 		},
 		{
 			title:       "logging_with_the_level_higher_than_the_log_level_should_not_log",
 			loggerLevel: WarnLevel,
-			message:     "message",
+			message:     "Message",
 			shouldLog:   false,
 		},
 	}
@@ -221,15 +221,15 @@ func TestLogWriterInfoJSON(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.title, func(t *testing.T) {
 			writeLogAndAssertJSON(tc.loggerLevel,
-				func(lw *LogWriter) {
+				func(lw *Logger) {
 					lw.Info(tc.message)
 				},
-				func(fields Fields, lw *LogWriter) {
-					assrt.Equal(tc.loggerLevel, lw.Level)
-					msg, ok := fields["msg"]
+				func(fields Fields, lw *Logger) {
+					assrt.Equal(tc.loggerLevel, lw.level)
+					msg, ok := fields[messageKey]
 					if tc.shouldLog {
 						if !ok {
-							t.Error("Failed to retrieve the message. Nothing was logged")
+							t.Error("Failed to retrieve the Message. Nothing was logged")
 						}
 						if logged, ok := checkLoggedField(tc.message, msg); !ok {
 							t.Errorf("expected %s, received '%v'", tc.message, logged)
