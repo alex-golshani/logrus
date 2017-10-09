@@ -235,6 +235,13 @@ func (logger *Logger) SetFormatter(formatter Formatter) {
 	logger.formatter = formatter
 }
 
+// SetLevel sets the log level of the Logger object
+func (logger *Logger) SetLevel(level Level) {
+	logger.mux.Lock()
+	defer logger.mux.Unlock()
+	logger.level = level
+}
+
 // AddHook adds an external hook to the logger
 // The hooks will get executed before we log the entry
 func (logger *Logger) AddHook(hook Hook) {
