@@ -10,7 +10,7 @@ import (
 
 func main() {
 	logger := log.New(log.InfoLevel)
-	logger.formatter = &log.JSONFormatter{}
+	logger.SetFormatter(&log.JSONFormatter{})
 	entry := logger.WithField("sample", "nah")
 
 	wg := &sync.WaitGroup{}

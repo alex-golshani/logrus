@@ -161,14 +161,6 @@ func (entry *Entry) log(msg string) {
 	entry.Time = time.Now()
 	entry.Message = msg
 
-	entry.Logger.mux.Lock()
-	err := entry.Logger.hooks.Fire(entry.Level, entry)
-	entry.Logger.mux.Unlock()
-	if err != nil {
-		entry.Logger.mux.Lock()
-		fmt.Fprintf(os.Stderr, "Failed to fire the hook: %v\n", err)
-		entry.Logger.mux.Unlock()
-	}
 	serialized, err := entry.Logger.formatter.Format(entry)
 	if err != nil {
 		entry.Logger.mux.Lock()

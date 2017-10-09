@@ -36,13 +36,6 @@ func SetLevel(level Level) {
 	std.level = level
 }
 
-// AddHook adds a hook to the standard Logger hooks.
-func AddHook(hook Hook) {
-	std.mux.Lock()
-	defer std.mux.Unlock()
-	std.hooks.Add(hook)
-}
-
 // WithError creates an entry from the standard Logger and adds an error to the entry.
 func WithError(err error) *Entry {
 	return std.WithField(errorKey, err)
