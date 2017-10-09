@@ -7,7 +7,7 @@ import (
 
 func BenchmarkLogEntryWithFieldsNoLog(b *testing.B) {
 	logger := New(InfoLevel)
-	logger.out = &bytes.Buffer{}
+	logger.Out = &bytes.Buffer{}
 	entry := NewEntry(logger)
 	for i := 0; i <= b.N; i++ {
 		entry.AsDebug().WithField("test", "test").Write("Message")

@@ -89,7 +89,7 @@ func (entry *Entry) AsPanic() *Entry {
 
 // WithField adds a field to the log entry, note that it doesn't log until you call Write.
 func (entry *Entry) WithField(key string, value interface{}) *Entry {
-	if entry.Level > entry.Logger.getLevel() {
+	if entry.Level > entry.Logger.Level() {
 		return entry
 	}
 	//Do not change this to Fields{key:value}. You will end up getting more allocations
@@ -100,7 +100,7 @@ func (entry *Entry) WithField(key string, value interface{}) *Entry {
 
 // WithFields adds a struct of fields to the log entry
 func (entry *Entry) WithFields(fields Fields) *Entry {
-	if entry.Level > entry.Logger.getLevel() {
+	if entry.Level > entry.Logger.Level() {
 		return entry
 	}
 	data := make(Fields, len(entry.Data)+len(fields))
@@ -139,7 +139,7 @@ func newLogEntry(logger *Logger, level Level, data Fields) *Entry {
 }
 
 func (entry *Entry) write(mode formatMode, format string, args ...interface{}) {
-	if entry.Logger.getLevel() >= entry.Level {
+	if entry.Logger.Level() >= entry.Level {
 		message := constructMessage(mode, format, args...)
 		entry.log(message)
 	}
@@ -168,7 +168,7 @@ func (entry *Entry) log(msg string) {
 		entry.Logger.mux.Unlock()
 	} else {
 		entry.Logger.mux.Lock()
-		_, err = entry.Logger.out.Write(serialized)
+		_, err = entry.Logger.Out.Write(serialized)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to write to log, %v\n", err)
 		}

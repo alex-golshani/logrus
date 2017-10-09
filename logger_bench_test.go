@@ -33,7 +33,7 @@ func BenchmarkDummyLoggerNoLock(b *testing.B) {
 
 func doLoggerBenchmark(b *testing.B, out *os.File, formatter Formatter, fields Fields) {
 	logger := Logger{
-		out:       out,
+		Out:       out,
 		level:     InfoLevel,
 		formatter: formatter,
 	}
@@ -47,7 +47,7 @@ func doLoggerBenchmark(b *testing.B, out *os.File, formatter Formatter, fields F
 
 func doLoggerBenchmarkNoLock(b *testing.B, out *os.File, formatter Formatter, fields Fields) {
 	logger := Logger{
-		out:       out,
+		Out:       out,
 		level:     InfoLevel,
 		formatter: formatter,
 	}

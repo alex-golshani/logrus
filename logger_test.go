@@ -14,7 +14,7 @@ func writeLogAndAssertJSON(loggerLevel Level, log func(*Logger), assertions func
 	var fields Fields
 
 	logger := New(loggerLevel)
-	logger.out = &buffer
+	logger.Out = &buffer
 	logger.formatter = new(JSONFormatter)
 
 	log(logger)
@@ -29,7 +29,7 @@ func writeLogAndAssertText(t *testing.T, loggerLevel Level, log func(*Logger), a
 
 	var buffer bytes.Buffer
 	logger := New(loggerLevel)
-	logger.out = &buffer
+	logger.Out = &buffer
 	logger.formatter = &TextFormatter{
 		DisableColors: true,
 	}

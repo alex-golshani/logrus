@@ -384,7 +384,7 @@ func TestWithError(t *testing.T) {
 func TestEntryInstantiation(t *testing.T) {
 	logger := New(InfoLevel)
 	buf := &bytes.Buffer{}
-	logger.out = buf
+	logger.Out = buf
 	logger.formatter = new(JSONFormatter)
 
 	testCases := []struct {

@@ -19,7 +19,7 @@ func StandardLogger() *Logger {
 func SetOutput(out io.Writer) {
 	std.mux.Lock()
 	defer std.mux.Unlock()
-	std.out = out
+	std.Out = out
 }
 
 // SetFormatter sets the standard Logger formatter.

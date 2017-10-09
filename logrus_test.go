@@ -16,7 +16,7 @@ func LogAndAssertJSON(t *testing.T, log func(*Logger), assertions func(fields Fi
 	var fields Fields
 
 	logger := New(InfoLevel)
-	logger.out = &buffer
+	logger.Out = &buffer
 	logger.formatter = new(JSONFormatter)
 
 	log(logger)
@@ -31,7 +31,7 @@ func LogAndAssertText(t *testing.T, log func(*Logger), assertions func(fields ma
 	var buffer bytes.Buffer
 
 	logger := New(InfoLevel)
-	logger.out = &buffer
+	logger.Out = &buffer
 	logger.formatter = &TextFormatter{
 		DisableColors: true,
 	}
@@ -127,7 +127,7 @@ func TestWithFieldsShouldAllowAssignments(t *testing.T) {
 	var fields Fields
 
 	logger := New(InfoLevel)
-	logger.out = &buffer
+	logger.Out = &buffer
 	logger.formatter = new(JSONFormatter)
 
 	localLog := logger.WithFields(Fields{
@@ -206,7 +206,7 @@ func TestDoubleLoggingDoesntPrefixPreviousFields(t *testing.T) {
 	var fields Fields
 
 	logger := New(InfoLevel)
-	logger.out = &buffer
+	logger.Out = &buffer
 	logger.formatter = new(JSONFormatter)
 
 	llog := logger.WithField("context", "eating raw fish")
@@ -327,13 +327,13 @@ func TestLogrusInterface(t *testing.T) {
 	}
 	// test Logger
 	logger := New(InfoLevel)
-	logger.out = &buffer
+	logger.Out = &buffer
 	fn(logger)
 }
 
 // Implements io.Writer using channels for synchronization, so we can wait on
 // the Entry.Writer goroutine to write in a non-racey way. This does assume that
-// there is a single call to Logger.out for each Message.
+// there is a single call to Logger.Out for each Message.
 type channelWriter chan []byte
 
 func (cw channelWriter) Write(p []byte) (int, error) {
@@ -344,7 +344,7 @@ func (cw channelWriter) Write(p []byte) (int, error) {
 func TestEntryWriter(t *testing.T) {
 	cw := channelWriter(make(chan []byte, 1))
 	log := New(InfoLevel)
-	log.out = cw
+	log.Out = cw
 	log.formatter = new(JSONFormatter)
 	log.WithField("foo", "bar").WriterLevel(WarnLevel).Write([]byte("hello\n"))
 

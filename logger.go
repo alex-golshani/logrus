@@ -9,12 +9,12 @@ import (
 )
 
 type Logger struct {
-	// out The logs are `io.Copy`'d to this in a mutex. It's common to set this to a
+	// Out The logs are `io.Copy`'d to this in a mutex. It's common to set this to a
 	// file, or leave it default which is `os.Stderr`. You can also set this to
 	// something more adventurous, such as logging to Kafka.
-	out io.Writer
+	Out io.Writer
 
-	// formatter all log entries pass through the formatter before logged to out. The
+	// formatter all log entries pass through the formatter before logged to Out. The
 	// included formatters are `TextFormatter` and `JSONFormatter` for which
 	// TextFormatter is the default. In development (when a TTY is attached) it
 	// logs with colors, but to a file it wouldn't. You can easily implement your
@@ -34,11 +34,11 @@ type Logger struct {
 }
 
 // New creates a new instance of Logger. Configuration should be set by changing `formatter` (default TextFormatter),
-// `out` (default os.Stderr) and `hooks` directly on the default Logger instance.
+// `Out` (default os.Stderr) and `hooks` directly on the default Logger instance.
 // It's recommended to make this a global instance called `log`.
 func New(level Level) *Logger {
 	return &Logger{
-		out: os.Stderr,
+		Out: os.Stderr,
 		formatter: &TextFormatter{
 			DisableSorting: true,
 		},
@@ -221,7 +221,7 @@ func (logger *Logger) SetNoLock() {
 func (logger *Logger) SetOutput(out io.Writer) {
 	logger.mux.Lock()
 	defer logger.mux.Unlock()
-	logger.out = out
+	logger.Out = out
 }
 
 // SetFormatter sets the Logger's formatter.
@@ -233,9 +233,12 @@ func (logger *Logger) SetFormatter(formatter Formatter) {
 
 // SetLevel sets the log level of the Logger object
 func (logger *Logger) SetLevel(level Level) {
-	logger.mux.Lock()
-	defer logger.mux.Unlock()
-	logger.level = level
+	atomic.StoreUint32((*uint32)(&logger.level), uint32(level))
+}
+
+// Level gets the Logger's current level value
+func (logger *Logger) Level() Level {
+	return Level(atomic.LoadUint32((*uint32)(&logger.level)))
 }
 
 func (logger *Logger) releaseEntry(entry *Entry) {
@@ -243,7 +246,7 @@ func (logger *Logger) releaseEntry(entry *Entry) {
 }
 
 func (logger *Logger) log(level Level, mode formatMode, format string, args ...interface{}) {
-	if logger.getLevel() >= level {
+	if logger.Level() >= level {
 		entry := logger.newEntry()
 		message := constructMessage(mode, format, args...)
 		entry.Level = level
@@ -258,8 +261,4 @@ func (logger *Logger) newEntry() *Entry {
 		return entry
 	}
 	return NewEntry(logger)
-}
-
-func (logger *Logger) getLevel() Level {
-	return Level(atomic.LoadUint32((*uint32)(&logger.level)))
 }

@@ -57,7 +57,7 @@ type TextFormatter struct {
 	// QuoteEmptyFields will wrap empty fields in quotes if true
 	QuoteEmptyFields bool
 
-	// Whether the Logger's out is to a terminal
+	// Whether the Logger's Out is to a terminal
 	isTerminal bool
 
 	sync.Once
@@ -67,7 +67,7 @@ type TextFormatter struct {
 func (f *TextFormatter) Format(entry *Entry) ([]byte, error) {
 	f.Do(func() {
 		if entry.Logger != nil {
-			f.init(entry.Logger.out)
+			f.init(entry.Logger.Out)
 		}
 	})
 	b := &bytes.Buffer{}
