@@ -36,6 +36,48 @@ func SetLevel(level Level) {
 	std.level = level
 }
 
+// AsLevel creates a new entry from the standard Logger and sets the level to the specified value.
+// Make sure you call this method before calling WithField, WithFields and WithError methods
+func AsLevel(level Level) *Entry {
+	return std.AsLevel(level)
+}
+
+// AsDebug creates a new entry from the standard Logger and sets the level to `debug`
+// Make sure you call this method before calling WithField, WithFields and WithError methods
+func AsDebug() *Entry {
+	return std.AsLevel(DebugLevel)
+}
+
+// AsInfo creates a new entry from the standard Logger and sets the level to `info`
+// Make sure you call this method before calling WithField, WithFields and WithError methods
+func AsInfo() *Entry {
+	return std.AsLevel(InfoLevel)
+}
+
+// AsWarning creates a new entry from the standard Logger and sets the level to `warning`
+// Make sure you call this method before calling WithField, WithFields and WithError methods
+func AsWarning() *Entry {
+	return std.AsLevel(WarnLevel)
+}
+
+// AsError creates a new entry from the standard Logger and sets the level to `error`
+// Make sure you call this method before calling WithField, WithFields and WithError methods
+func AsError() *Entry {
+	return std.AsLevel(ErrorLevel)
+}
+
+// AsFatal creates a new entry from the standard Logger and sets the level to `fatal`
+// Make sure you call this method before calling WithField, WithFields and WithError methods
+func AsFatal() *Entry {
+	return std.AsLevel(FatalLevel)
+}
+
+// AsPanic creates a new entry from the standard Logger and sets the level to `panic`
+// Make sure you call this method before calling WithField, WithFields and WithError methods
+func AsPanic() *Entry {
+	return std.AsLevel(PanicLevel)
+}
+
 // WithError creates an entry from the standard Logger and adds an error to the entry.
 func WithError(err error) *Entry {
 	return std.WithField(errorKey, err)
