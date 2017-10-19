@@ -112,6 +112,18 @@ func (logger *Logger) WithError(err error) *Entry {
 	return entry.WithError(err)
 }
 
+func (logger *Logger) Print(args ...interface{}){
+	logger.log(InfoLevel, unformatted, "", args...)
+}
+
+func (logger *Logger) Printf(format string, args ...interface{}){
+	logger.log(InfoLevel, formatted, format, args...)
+}
+
+func (logger *Logger) Println(args ...interface{}){
+	logger.log(InfoLevel, newLine, "", args...)
+}
+
 // Debugf logs a formatted string at debug level
 func (logger *Logger) Debugf(format string, args ...interface{}) {
 	logger.log(DebugLevel, formatted, format, args...)
