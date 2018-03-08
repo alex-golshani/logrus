@@ -29,12 +29,33 @@ func SetFormatter(formatter Formatter) {
 	std.formatter = formatter
 }
 
+// UseJsonFormatter sets the standard Logger's formatter to Json.
+//
+// This method is a shortcut to SetFormatter(...) method.
+func UseJsonFormatter() {
+	std.mux.Lock()
+	defer std.mux.Unlock()
+	std.formatter = &JSONFormatter{}
+}
+
+// UseTextFormatter sets the standard Logger's formatter to text.
+//
+// This method is a shortcut to SetFormatter(...) method.
+func UseTextFormatter() {
+	std.mux.Lock()
+	defer std.mux.Unlock()
+	std.formatter = &TextFormatter{
+		DisableSorting: true,
+		DisableColors: true,
+	}
+}
 // SetLevel sets the standard Logger level.
 func SetLevel(level Level) {
 	std.mux.Lock()
 	defer std.mux.Unlock()
 	std.level = level
 }
+
 
 // AsLevel creates a new entry from the standard Logger and sets the level to the specified value.
 // Make sure you call this method before calling WithField, WithFields and WithError methods

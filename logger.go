@@ -41,6 +41,7 @@ func New(level Level) *Logger {
 		Out: os.Stderr,
 		formatter: &TextFormatter{
 			DisableSorting: true,
+			DisableColors: true,
 		},
 		level: level,
 	}
@@ -237,11 +238,36 @@ func (logger *Logger) SetOutput(out io.Writer) {
 }
 
 // SetFormatter sets the Logger's formatter.
+//
+// You can also call UseJsonFormatter or UseTextFormatter shortcut functions
+// Json and Text formatter
 func (logger *Logger) SetFormatter(formatter Formatter) {
 	logger.mux.Lock()
 	defer logger.mux.Unlock()
 	logger.formatter = formatter
 }
+
+// UseJsonFormatter sets the log formatter to Json.
+//
+// This method is a shortcut to SetFormatter(...) method.
+func (logger *Logger) UseJsonFormatter() {
+	logger.mux.Lock()
+	defer logger.mux.Unlock()
+	logger.formatter = &JSONFormatter{}
+}
+
+// UseTextFormatter sets the log formatter to text.
+//
+// This method is a shortcut to SetFormatter(...) method.
+func (logger *Logger) UseTextFormatter() {
+	logger.mux.Lock()
+	defer logger.mux.Unlock()
+	logger.formatter = &TextFormatter{
+		DisableSorting: true,
+		DisableColors: true,
+	}
+}
+
 
 // SetLevel sets the log level of the Logger object
 func (logger *Logger) SetLevel(level Level) {
